@@ -3,15 +3,9 @@ from PyQt5.QtWidgets import *
 
 import json
 
-notes = {
-    "Ласкаво просимо": {
-        "текст": "додаток для заміток",
-        "теги": ["додаток", "замітки"]
-    }
-}
-
-with open("notes_data.json", "w") as file:
-    json.dump(notes, file)
+notes = []
+note = []
+name = 0
 
 app = QApplication([])
 
@@ -74,26 +68,40 @@ layout_notes.addLayout(col_2, stretch=1)
 notes_win.setLayout(layout_notes)
 
 def add_note():
-    note_name, ok = QInputDialog.getText(notes_win, "Додати замітку")
+    note_name, ok = QInputDialog.getText(notes_win, "Додати замітку", "Назва замітки")    
     if ok and note_name != "":
-        notes[note_name] = { "текст": "", "теги": [] }
-        list_notes.addItem(note_name)
-        list_tags.addItems(notes[note_name]["теги"])
+        note = list()
+        note = [note_name, '', []]
+        notes.append(note)
+        list_notes.addItem(note[0])
+        list_tags.addItems(note[2])
         print(notes)
+        with open(str(len(notes)-1)+ ".txt", "w", encoding="utf-8") as file:
+            file.write(note[0]+'\n')
 
 def show_note():
     key = list_notes.selectedItems()[0].text()
     print(key)
-    field_text.setText(notes[key]["текст"])
-    list_tags.clear()
-    list_tags.addItems(notes[key]["теги"])
+    for note in notes:
+        if note[0] == key:
+            field_text.setText(note[1])
+            list_tags.clear()
+            list_tags.addItems(note[2])
 
 def save_note():
     if list_notes.selectedItems():
         key = list_notes.selectedItems()[0].text()
-        notes[key]["text"] = field_text.toPlainText()
-        with open("notes_data.json", "w") as file:
-            json.dump(notes, file, sort_keys=True, ensure_ascii=True)
+        index = 0
+        for note in notes:
+            if note[0] == key:
+                note[1] = field_text.toPlainText()
+                with open(str(index) + ".txt", "w") as file:
+                    file.write(note[0] + "\n")
+                    file.write(note[1] + "\n")
+                    for tag in note[2]:
+                        file.write(tag + " ")
+                    file.write("\n")
+            index += 1
         print(notes)
     else:
         print("Нотатка для збереження не вибрана")
@@ -163,7 +171,31 @@ def search_tag():
         print(button_tag_search.text())
     else:
         pass
-    
+
+list_notes.clicked.connect(show_note)
+
+button_note_create.clicked.connect(add_note)
+button_note_delete.clicked.connect(delete_note)
+button_note_save.clicked.connect(save_note)
+
+button_tag_add.clicked.connect(add_tag)
+button_tag_del.clicked.connect(delete_tag)
+button_tag_search.clicked.connect(search_tag)
+
+while True:
+    filename = str(name) + ".txt"
+    try:
+        with open(filename, "r") as file:
+            for line in file:
+                line = line.replace('\n', "")
+                note.append(line)
+        tags = note[2].split(" ")
+        note[2] = tags
+        notes.append(note)
+        note = []
+        name += 1
+    except IOError:
+        break
 
 notes_win.show()
 app.exec_()
